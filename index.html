@@ -871,9 +871,8 @@ function calculateTuition() {
     }
 }
 
-// 🎯 核心補強：綁定 Form 提交事件與 Google Apps Script 專屬通訊天線對接
+// 🎯 核心雙通道修復：綁定 Form 提交事件（GAS 背景發送 + FormSubmit 必勝激活）
 document.getElementById('enrollmentForm').addEventListener('submit', function(e) {
-    e.preventDefault(); 
     var form = this;
     var submitBtn = document.getElementById('submitBtn');
     
@@ -898,29 +897,21 @@ document.getElementById('enrollmentForm').addEventListener('submit', function(e)
     params.append('auto_print', 'true');
     document.getElementById('printLinkInput').value = baseUrl + '?' + params.toString();
     
-    // 🎯 核心對接：GAS 專屬通訊天線 URL
+    // 🎯 專屬通訊天線 URL
     var googleAppsScriptUrl = "https://script.google.com/macros/s/AKfycbzEuQxLVm_1BgBZNAAO2FUdZ6y385oTV02aEgnCIkN6756PCGZCr3h1Iypqpe0LQxPXsw/exec";
     
-    // 🎯 雙重防護：使用 mode: 'no-cors' 與 Timeout Racers 防止頁面無響應
-    var fetchPromise = fetch(googleAppsScriptUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: new URLSearchParams(new FormData(form))
-    });
-
-    var timeoutPromise = new Promise(function(resolve) {
-        setTimeout(function() { resolve("timeout"); }, 2500);
-    });
-
-    Promise.race([fetchPromise, timeoutPromise])
-    .then(function() {
-        alert("🎉 巴比美語：Advance B2 班線上報名成功！");
-        form.submit(); 
-    })
-    .catch(function(error) {
-        console.warn("GAS Sync Notice:", error);
-        form.submit();
-    });
+    // 採用 sendBeacon 或背景安全推播，不阻斷表單直接提交至 FormSubmit
+    try {
+        navigator.sendBeacon(googleAppsScriptUrl, new URLSearchParams(new FormData(form)));
+    } catch(err) {
+        fetch(googleAppsScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: new URLSearchParams(new FormData(form))
+        });
+    }
+    
+    return true; // 允許表單順利送出至 FormSubmit.co 觸發 Activation 電郵！
 });
 </script>
 </body>
