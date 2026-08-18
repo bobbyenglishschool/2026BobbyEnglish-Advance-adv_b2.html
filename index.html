@@ -17,7 +17,7 @@
             --uci-gold: #fecc07;
             --soft-red: #e74c3c;
             --card-bg: #f8fafc;
-            --border-color: #1b3d6d; /* 強制導向巴比深藍 */
+            --border-color: #1b3d6d; /* 強制全面為巴比深藍色外框 */
             --text-main: #1e293b;
             --text-sub: #475569;
         }
@@ -224,7 +224,7 @@
             justify-content: flex-start;
         }
 
-        /* 🎯 Aegis 核心 UI 規範 5：選讀班別拆解兩行、去「班」字、100% 幾何精準居中 */
+        /* 🎯 Aegis 核心 UI 規範 3：選讀班別拆解兩行、刪除贅字「班」、100% 幾何精準居中 */
         .static-course-display {
             font-weight: bold;
             color: var(--uci-blue);
@@ -556,7 +556,7 @@
                         <tr>
                             <th><span class="zh-title">出生日期</span><span class="en-title">Date of Birth</span></th>
                             <!-- 🎯 DOB 靠右且留 12px 防撞氣墊，絕不碰撞右邊框線！ -->
-                            <td><input type="date" name="dob" class="text-input" required></td>
+                            <td><input type="date" name="dob" class="text-input" style="text-align: right !important; padding-right: 12px !important;" required></td>
                             <th><span class="zh-title">就讀學校</span><span class="en-title">School</span></th>
                             <td><input type="text" name="school" class="text-input" placeholder=""></td>
                             <th><span class="zh-title">年級</span><span class="en-title">Grade</span></th>
@@ -605,9 +605,10 @@
                         <tr>
                             <th><span class="zh-title">學員身分狀態</span><span class="en-title">Student Status</span></th>
                             <td colspan="5">
+                                <!-- 🎯 核心 UI 規範 6：去身分標籤，統一為「新生（需購買教材）」與「舊生（無需購買教材）」 -->
                                 <div class="radio-group">
-                                    <label><input type="radio" name="student_status" value="新進" checked onchange="calculateTuition()"> <b>新進學生</b> (New Student - 內含固定完整教材)</label>
-                                    <label><input type="radio" name="student_status" value="晉升" onchange="calculateTuition()"> <b>晉升學生</b> (Returning Student - 續用原教材優惠)</label>
+                                    <label><input type="radio" name="student_status" value="新生" checked onchange="calculateTuition()"> <b>新生（需購買教材）</b> (New Student)</label>
+                                    <label><input type="radio" name="student_status" value="舊生" onchange="calculateTuition()"> <b>舊生（無需購買教材）</b> (Returning Student)</label>
                                 </div>
                             </td>
                         </tr>
@@ -618,7 +619,7 @@
                                     <label><input type="radio" name="discount_plan" value="1.0" checked onchange="calculateTuition()"> 常態收費原價 (Full Price)</label>
                                     <label><input type="radio" name="discount_plan" value="0.9" onchange="calculateTuition()"> 9 折優惠 (10% OFF)</label>
                                     <label><input type="radio" name="discount_plan" value="0.85" onchange="calculateTuition()"> 85 折優惠 (15% OFF)</label>
-                                    <!-- 🎯 核心 UI 規範：去身分標籤，統一為「✨ 8 折優惠」 -->
+                                    <!-- 🎯 核心 UI 規範 6：去身分標籤，統一為「✨ 8 折優惠」 -->
                                     <label><input type="radio" name="discount_plan" value="0.8" onchange="calculateTuition()"> ✨ 8 折優惠 (20% OFF)</label>
                                 </div>
                             </td>
@@ -759,22 +760,14 @@
 </div>
 
 <script>
-// ===== 🎯 官方死數字防線數據庫 (B2專屬 - 精準同步 34 堂課與最新費用明細) =====
-var advancedDeadValues = {
-    "新進": { 
-        labelHtml: "<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height:100%; width:100%;'><div style='font-weight:800; color:var(--uci-blue); font-size:14px; line-height:1.2;'>Advance B2</div><div style='font-weight:700; color:var(--uci-blue); font-size:12px; line-height:1.2; margin-top:2px;'>青少年進階美語</div></div>",
-        labelRaw: "Advance B2 青少年進階美語 (新進學生)",
-        "1.0": 33160, "0.9": 29844, "0.85": 28186, "0.8": 26528, 
-        time: "<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height:100%; width:100%;'><div style='font-weight:800; color:var(--uci-blue); font-size:13px; line-height:1.2;'><span class='no-orphan'>每週三、五</span></div><div style='font-weight:700; color:var(--uci-blue); font-size:11.5px; line-height:1.2; margin-top:3px;'><span class='no-orphan'>7:00 PM - 9:00 PM</span></div></div>", 
-        t: 27880, m: 3240, ms: 2040 
-    },
-    "晉升": { 
-        labelHtml: "<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height:100%; width:100%;'><div style='font-weight:800; color:var(--uci-blue); font-size:14px; line-height:1.2;'>Advance B2</div><div style='font-weight:700; color:var(--uci-blue); font-size:12px; line-height:1.2; margin-top:2px;'>青少年進階美語</div></div>",
-        labelRaw: "Advance B2 青少年進階美語 (晉升學生)",
-        "1.0": 30420, "0.9": 27378, "0.85": 25857, "0.8": 24366, 
-        time: "<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height:100%; width:100%;'><div style='font-weight:800; color:var(--uci-blue); font-size:13px; line-height:1.2;'><span class='no-orphan'>每週三、五</span></div><div style='font-weight:700; color:var(--uci-blue); font-size:11.5px; line-height:1.2; margin-top:3px;'><span class='no-orphan'>7:00 PM - 9:00 PM</span></div></div>", 
-        t: 27880, m: 500, ms: 2040 
-    }
+// ===== 🎯 核心 UI 規範 5：選讀班別拆兩行、去「班」字、幾何精準置中 =====
+var courseInfoConfig = {
+    labelHtml: "<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height:100%; width:100%;'><div style='font-weight:800; color:var(--uci-blue); font-size:14px; line-height:1.2;'>Advance B2</div><div style='font-weight:700; color:var(--uci-blue); font-size:12px; line-height:1.2; margin-top:2px;'>青少年進階美語</div></div>",
+    timeHtml: "<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height:100%; width:100%;'><div style='font-weight:800; color:var(--uci-blue); font-size:13px; line-height:1.2;'><span class='no-orphan'>每週三、五</span></div><div style='font-weight:700; color:var(--uci-blue); font-size:11.5px; line-height:1.2; margin-top:3px;'><span class='no-orphan'>7:00 PM - 9:00 PM</span></div></div>",
+    baseTuition: 27880,  // 基本學費
+    baseMisc: 2040,      // 當期學雜費
+    materialsNew: 3240,  // 新生全套教材
+    materialsOld: 500    // 舊生專屬作業本
 };
 
 // ==========================================
@@ -834,11 +827,13 @@ function showImagePreview(input) {
     }
 }
 
+// 🎯 核心 UI 規範 4：全項目動態折扣最高算式：Math.round((基本學費 + 原價教材費 + 當期學雜費) * 折扣率)
 function calculateTuition() {
     try {
         var statusRadio = document.querySelector('input[name="student_status"]:checked');
-        var statusKey = statusRadio ? statusRadio.value : "新進";
-        
+        var isNewStudent = (!statusRadio || statusRadio.value === "新生" || statusRadio.value === "新進");
+        var statusKeyText = isNewStudent ? "新生" : "舊生";
+
         var labelDisplay = document.getElementById('courseLabelDisplay');
         var timeDisplay = document.getElementById('timeDisplay');
         var calcPreview = document.getElementById('calcPreview');
@@ -848,35 +843,35 @@ function calculateTuition() {
         var activeRadio = document.querySelector('input[name="discount_plan"]:checked');
         if (activeRadio) discountRate = parseFloat(activeRadio.value);
 
-        if (advancedDeadValues[statusKey]) {
-            var adv = advancedDeadValues[statusKey];
-            
-            // 🎯 就讀班別渲染：帶入雙層幾何置中 HTML 結構
-            labelDisplay.innerHTML = adv.labelHtml;
-            
-            var finalTotal = adv[discountRate.toString()] || adv["1.0"];
-            
-            document.getElementById('class_time').value = "每週三、五 7:00 PM - 9:00 PM";
-            document.getElementById('sub_tuition').value = adv.t;
-            document.getElementById('sub_materials').value = adv.m;
-            document.getElementById('sub_misc').value = adv.ms;
-            
-            totalInput.value = "$" + finalTotal;
-            timeDisplay.innerHTML = adv.time;
+        var curMaterials = isNewStudent ? courseInfoConfig.materialsNew : courseInfoConfig.materialsOld;
+        var curTuition = courseInfoConfig.baseTuition;
+        var curMisc = courseInfoConfig.baseMisc;
 
-            // 🎯 核心 UI 規範 6：去身分標籤，統一提示為 (享8折特惠)
-            var discountLabel = discountRate === 0.8 ? " <span style='color:red;'>(享8折特惠)</span>" : " (常態運算)";
+        // 全項目連動打折算式
+        var finalTotal = Math.round((curTuition + curMaterials + curMisc) * discountRate);
 
-            calcPreview.innerHTML = "📚 <b>" + TARGET_COURSE + " (" + statusKey + "方案) 費用即時拆解明細" + discountLabel + "</b>：<br>" +
-                                    "基本學費總計：$" + adv.t.toLocaleString() + " | 固定教材費：$" + adv.m.toLocaleString() + " | 當期學雜費：$" + adv.ms.toLocaleString() + "<br>" +
-                                    "👉 <b>方案核定應繳總金額：NT$ " + finalTotal.toLocaleString() + " 元</b>";
-        }
+        labelDisplay.innerHTML = courseInfoConfig.labelHtml;
+        timeDisplay.innerHTML = courseInfoConfig.timeHtml;
+
+        document.getElementById('class_time').value = "每週三、五 7:00 PM - 9:00 PM";
+        document.getElementById('sub_tuition').value = curTuition;
+        document.getElementById('sub_materials').value = curMaterials;
+        document.getElementById('sub_misc').value = curMisc;
+
+        totalInput.value = "$" + finalTotal.toLocaleString();
+
+        // 🎯 核心 UI 規範 6：去身分標籤，統一提示為 ✨ 8 折優惠
+        var discountLabel = discountRate === 0.8 ? " <span style='color:red;'>(✨ 8 折優惠)</span>" : " (常態運算)";
+
+        calcPreview.innerHTML = "📚 <b>" + TARGET_COURSE + " (" + statusKeyText + "方案) 費用即時拆解明細" + discountLabel + "</b>：<br>" +
+                                "基本學費：$" + curTuition.toLocaleString() + " | 教材費：$" + curMaterials.toLocaleString() + " | 當期學雜費：$" + curMisc.toLocaleString() + "<br>" +
+                                "👉 <b>全項目動態折扣應繳總金額：NT$ " + finalTotal.toLocaleString() + " 元</b>";
     } catch (err) {
         console.error("Tuition calculation error resolved:", err);
     }
 }
 
-// 🎯 核心補強：綁定 Form 提交事件與 Google Apps Script 雲端同步腳本
+// 🎯 核心補強：綁定 Form 提交事件與 Google Apps Script 專屬通訊天線對接
 document.getElementById('enrollmentForm').addEventListener('submit', function(e) {
     e.preventDefault(); 
     var form = this;
@@ -903,7 +898,8 @@ document.getElementById('enrollmentForm').addEventListener('submit', function(e)
     params.append('auto_print', 'true');
     document.getElementById('printLinkInput').value = baseUrl + '?' + params.toString();
     
-    var googleAppsScriptUrl = "https://script.google.com/macros/s/AKfycbxt07hF-qkXePULEBjuCpzdWnaeNWsTlQV7dRhch_iBwtVePOIJzldTAsR0LothoQ1l/exec";
+    // 🎯 核心對接：GAS 專屬通訊天線 URL
+    var googleAppsScriptUrl = "https://script.google.com/macros/s/AKfycbzEuQxLVm_1BgBZNAAO2FUdZ6y385oTV02aEgnCIkN6756PCGZCr3h1Iypqpe0LQxPXsw/exec";
     
     // 🎯 雙重防護：使用 mode: 'no-cors' 與 Timeout Racers 防止頁面無響應
     var fetchPromise = fetch(googleAppsScriptUrl, {
@@ -918,7 +914,7 @@ document.getElementById('enrollmentForm').addEventListener('submit', function(e)
 
     Promise.race([fetchPromise, timeoutPromise])
     .then(function() {
-        alert("🎉 巴比美語：Advance B2 班線上報名與簽約成功！");
+        alert("🎉 巴比美語：Advance B2 班線上報名成功！");
         form.submit(); 
     })
     .catch(function(error) {
