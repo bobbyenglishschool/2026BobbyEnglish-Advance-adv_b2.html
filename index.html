@@ -871,8 +871,10 @@ function calculateTuition() {
     }
 }
 
-// 🎯 核心雙通道修復：綁定 Form 提交事件（GAS 背景發送 + FormSubmit 必勝激活）
+// 🎯 核心修復：二階段提交協定（e.preventDefault 踩煞車 ➔ 先傳 GAS ➔ 再放行送出至 FormSubmit 觸發 Activate）
 document.getElementById('enrollmentForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // 1. 先踩住煞車，防止瀏覽器過快跳頁導致 FormSubmit 封包斷線
+    
     var form = this;
     var submitBtn = document.getElementById('submitBtn');
     
@@ -900,18 +902,19 @@ document.getElementById('enrollmentForm').addEventListener('submit', function(e)
     // 🎯 專屬通訊天線 URL
     var googleAppsScriptUrl = "https://script.google.com/macros/s/AKfycbzEuQxLVm_1BgBZNAAO2FUdZ6y385oTV02aEgnCIkN6756PCGZCr3h1Iypqpe0LQxPXsw/exec";
     
-    // 採用 sendBeacon 或背景安全推播，不阻斷表單直接提交至 FormSubmit
-    try {
-        navigator.sendBeacon(googleAppsScriptUrl, new URLSearchParams(new FormData(form)));
-    } catch(err) {
-        fetch(googleAppsScriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: new URLSearchParams(new FormData(form))
-        });
-    }
-    
-    return true; // 允許表單順利送出至 FormSubmit.co 觸發 Activation 電郵！
+    // 2. 背景非同步發送給 GAS 試算表，完成後放行送出給 FormSubmit 觸發 Activate
+    fetch(googleAppsScriptUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: new URLSearchParams(new FormData(form))
+    })
+    .then(function() {
+        form.submit(); // 3. 順利放行提交至 FormSubmit.co
+    })
+    .catch(function(err) {
+        console.warn("GAS Sync Notice:", err);
+        form.submit(); // 即使 GAS 延遲也確保放行送至 FormSubmit
+    });
 });
 </script>
 </body>
