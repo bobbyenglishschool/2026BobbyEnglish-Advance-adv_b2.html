@@ -209,7 +209,7 @@
                             <th><span class="zh-title">年級</span><span class="en-title">Grade</span></th>
                             <td>
                                 <div style="display: flex; align-items: center; justify-content: flex-start; padding: 0 4px; height: 100%; white-space: nowrap;">
-                                    <input type="text" id="grade_level" name="grade_level" style="border: none; border-bottom: 1.5px solid #1b3d6d; width: 45px; text-align: center; margin: 0 2px; background: transparent; outline: none; font-weight: bold;" placeholder="如：6"> 年級
+                                    <input type="text" id="grade_level" name="grade_level" style="border: none; border-bottom: 1.5px solid #1b3d6d; width: 45px; text-align: center; margin: 0 2px; background: transparent; outline: none; font-weight: bold;" placeholder="如：8"> 年級
                                 </div>
                             </td>
                         </tr>
@@ -247,14 +247,13 @@
                             <th><span class="zh-title">標準上課時段</span><span class="en-title">Schedule</span></th>
                             <td colspan="2" id="timeDisplay" style="padding: 0; text-align: center; vertical-align: middle;">載入中...</td>
                         </tr>
-                        <!-- 🎯 Advance 系列專屬：保留「學員身分標籤」動態計費切換 -->
+                        <!-- 🎯 Advance B2 修正：更新學員身分標籤與教材費用對應 -->
                         <tr>
                             <th><span class="zh-title">學員身分標籤</span><span class="en-title">Student Identity</span></th>
                             <td colspan="5">
                                 <div class="radio-group">
-                                    <label><input type="radio" name="student_identity" value="new" checked onchange="calculateTuition()"> 新生（需購買專屬教材）</label>
-                                    <label><input type="radio" name="student_identity" value="old_with_mat" onchange="calculateTuition()"> 舊生（需購買當期新教材）</label>
-                                    <label><input type="radio" name="student_identity" value="old_no_mat" onchange="calculateTuition()"> 舊生（延用舊教材／免購教材）</label>
+                                    <label><input type="radio" name="student_identity" value="new" checked onchange="calculateTuition()"> 新生（需購買全套教材 $3,240）</label>
+                                    <label><input type="radio" name="student_identity" value="old_no_mat" onchange="calculateTuition()"> 舊生（僅需購買專屬作業本 $500）</label>
                                 </div>
                             </td>
                         </tr>
@@ -389,12 +388,17 @@
 </div>
 
 <script>
+// 🎯 Advance B2 正確資料庫設定 (每週三、五 7:00-9:00 PM，34 堂，每堂 $820，全套教材 $3240，作業本 $500，學雜費 $60/堂)
 var courseDatabase = {
     "Advance B2": { 
         id: "Advance B2",
-        zhName: "學術批判與學術寫作", 
-        time: "<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: 4px 0;'><div style='font-weight:800; color:var(--uci-blue); font-size:13px; line-height:1.2;'><span class='no-orphan'>每週二、四</span></div><div style='font-weight:700; color:var(--uci-blue); font-size:11.5px; line-height:1.2; margin-top:3px;'><span class='no-orphan'>4:30 PM - 6:30 PM (2小時/堂)</span></div></div>", 
-        lessons: 38, price: 770, materials: 3520, misc: 60 
+        zhName: "青少年閱讀與邏輯寫作班", 
+        time: "<div style='display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: 4px 0;'><div style='font-weight:800; color:var(--uci-blue); font-size:13px; line-height:1.2;'><span class='no-orphan'>每週三、五</span></div><div style='font-weight:700; color:var(--uci-blue); font-size:11.5px; line-height:1.2; margin-top:3px;'><span class='no-orphan'>7:00 PM - 9:00 PM (2小時/堂)</span></div></div>", 
+        lessons: 34, 
+        price: 820, 
+        materials_new: 3240, 
+        materials_old: 500, 
+        misc: 60 
     }
 };
 
@@ -573,7 +577,7 @@ function isCanvasBlank(canvas) {
     return !pixelBuffer.some(function(color) { return color !== 0; });
 }
 
-// 🎯 Advance B2 專屬計費邏輯：結合「學員身分標籤」與「折扣率」
+// 🎯 Advance B2 精準動態計費邏輯
 function calculateTuition() {
     try {
         var courseKey = TARGET_COURSE;
@@ -585,7 +589,7 @@ function calculateTuition() {
         if (courseDatabase[courseKey]) {
             var course = courseDatabase[courseKey];
             labelDisplay.innerHTML = "<div class='course-id'>" + course.id + "</div><div class='course-zh'>" + course.zhName + "</div>";
-            document.getElementById('class_time').value = "每週二四 4:30-6:30 PM";
+            document.getElementById('class_time').value = "每週三、五 7:00-9:00 PM";
             
             // 1. 取得折扣率
             var discountRate = 1.0;
@@ -595,16 +599,16 @@ function calculateTuition() {
                 document.getElementById('discount_plan_text').value = activeDiscountRadio.parentElement.innerText.trim();
             }
 
-            // 2. 取得學員身分並決定教材費
+            // 2. 取得學員身分並決定教材費 (新生 $3,240 / 舊生 $500)
             var identity = "new";
             var activeIdentityRadio = document.querySelector('input[name="student_identity"]:checked');
             if (activeIdentityRadio) {
                 identity = activeIdentityRadio.value;
             }
 
-            var tuitionTotal = course.price * course.lessons; // 770 * 38 = 29,260
-            var materialsTotal = (identity === 'old_no_mat') ? 0 : course.materials; // 新生/舊生含教材=$3,520，舊生免教材=$0
-            var miscTotal = course.misc * course.lessons;     // 60 * 38 = 2,280
+            var tuitionTotal = course.price * course.lessons; // 820 * 34 = 27,880
+            var materialsTotal = (identity === 'new') ? course.materials_new : course.materials_old; // 新生=$3,240，舊生=$500
+            var miscTotal = course.misc * course.lessons;     // 60 * 34 = 2,040
             
             var subTotal = tuitionTotal + materialsTotal + miscTotal;
             var finalTotal = Math.round(subTotal * discountRate);
@@ -619,7 +623,7 @@ function calculateTuition() {
             var discountStr = (discountRate * 10).toString();
             if (discountRate === 1.0) discountStr = "10";
             var discountText = discountRate === 1.0 ? "未套用額外優惠（維持原價）" : "套用 " + discountStr + " 折";
-            var idText = (identity === 'new') ? "新生" : (identity === 'old_with_mat' ? "舊生(含教材)" : "舊生(免購教材)");
+            var idText = (identity === 'new') ? "新生(含全套教材)" : "舊生(含專屬作業本)";
 
             calcPreview.innerHTML = "📚 <b>" + courseKey + " 費用明細與折扣說明（" + idText + "）</b>：<br>" +
                                     "基本學費：$" + course.price + " × " + course.lessons + "堂 = $" + tuitionTotal.toLocaleString() + " | " +
